@@ -209,19 +209,17 @@ public class MyAgent implements Agent {
                     minCounter = counter;
                     moveToDo = index;
                     aMoveToDo.add(index);
-                } else {
-                    if (score >= maxScore) {
-                        maxScore = score;
-                        moveToDo = index;
-                        aMoveToDoAux.add(index);
-                    }
+                }
+                if (score >= maxScore) {
+                    maxScore = score;
+                    moveToDoAux = index;
+                    aMoveToDoAux.add(index);
                 }
 
             }
             index++;
-            
-            //Comparar puntuaciones para moverme. ESO FALLA!
 
+            //Comparar puntuaciones para moverme. ESO FALLA!
         }
         //CUANDO QUIERO QUE SEA RANDOM?? cuando todos los posibles movimientos sean iguales.
         //añadir a un arraylist y sin son todos iguales entrar por aquí.
@@ -247,11 +245,10 @@ public class MyAgent implements Agent {
 //                i++;
 //            }
 //        }
-//        if (aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
-//            moveToDo = moveToDoAux;
-            //Si el movimiento que va a hacer es muy malo se va por el movimiento por puntos.
-//        }
-
+        if (aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
+            moveToDo = moveToDoAux;
+//        Si el movimiento que va a hacer es muy malo se va por el movimiento por puntos.
+        }
         System.out.println("Movimiento a realizar: " + moveToDo);
 
         // Le digo que moviento realizar
