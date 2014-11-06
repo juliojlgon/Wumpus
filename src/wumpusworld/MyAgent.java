@@ -35,7 +35,7 @@ public class MyAgent implements Agent {
         w = world;
         inicializarHashMap();
         aprendiz.get(0).put(CONT_KEY, 1);
-        aprendiz.get(0).put(SCORE_KEY, 1);
+        aprendiz.get(0).put(SCORE_KEY, 2);
     }
 
     public MyAgent(World world, ArrayList<HashMap<String, Integer>> hash) {
@@ -81,6 +81,51 @@ public class MyAgent implements Agent {
         return posicion;
     }
 
+    public boolean supLim() {
+        boolean terminal = false;
+        //Si desde el punto 0 encontramos algun valor superior a lo normal hemos terminado
+        int score1 = aprendiz.get(1).get(SCORE_KEY);
+        int score2 = aprendiz.get(5).get(SCORE_KEY);
+        if (score1 > 10 || score2 > 10) {
+            terminal = true;
+        }
+
+//        double contador = 0;
+//        for (int i = 0; i < aprendiz.size(); i++) {
+//            contador += aprendiz.get(i).get(CONT_KEY);
+//        }
+//        contador /= aprendiz.size();
+//        System.out.println("MEDIA --> " + contador);
+//        if (contador >= MAXCONT) {
+//            superior = true;
+//        }
+        return terminal;
+
+    }
+
+    public int randomMove() {
+        int i = 0;
+        int move = -1;
+        int primeraVez = 0;
+        while (i < posMoves.length) {
+            if (posMoves[i]) {
+                if (primeraVez == 0) {
+                    move = i;
+                    primeraVez = 1;
+                }
+                if (primeraVez == 1) {
+                    Random rand = new Random();
+                    if (rand.nextBoolean()) {
+                        move = i;
+                    }
+                }
+
+            }
+            i++;
+        }
+        return move;
+    }
+
     /**
      * Nos va a devolver la utilidad del nodo.
      *
@@ -89,26 +134,33 @@ public class MyAgent implements Agent {
      * @return Utilidad -50 en perceciones, -500 en pit y -1000 en wumpus
      */
     public int valorNodo(int x, int y, int bestX, int bestY) {
-        int valor = 10;
-        if (w.hasBreeze(x, y)) {
-            valor = valor - 60;
+        int valor = 0;
+        int score = aprendiz.get(obtenerPosicion(bestX, bestY)).get(SCORE_KEY);
+//        if (w.hasBreeze(x, y) && (score < 1)) {
+//            valor = - 50;
+//        }
+//        if (w.hasStench(x, y) && (score < 1)) {
+//            valor = - 50;
+//        }
+        if (w.hasPit(x, y) && (score < 1)) {
+            valor += -500;
         }
-        if (w.hasStench(x, y)) {
-            valor = valor - 60;
-        }
-        if (w.hasPit(x, y)) {
-            valor = valor - 510;
-        }
-        if (w.hasWumpus(x, y)) {
-            valor = valor - 1010;
+        if (w.hasWumpus(x, y) && (score < 1)) {
+            valor = -1010;
         }
         if (w.hasGlitter(x, y)) {
             valor = 10000;
+            score += 50;
+            aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
         }
-        if (aprendiz.get(obtenerPosicion(bestX, bestY)).get(SCORE_KEY) > 500) {
-
-            valor += 50;
-
+        if (aprendiz.get(obtenerPosicion(x, y)).get(SCORE_KEY) >= 50) {
+            if (obtenerPosicion(x, y) == 0) {
+                aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, 1);
+            } else {
+                valor = score + 60;
+                score += 40;
+                aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
+            }
         }
 
         return valor;
@@ -211,22 +263,23 @@ public class MyAgent implements Agent {
                  primero comprobamos el contador, ya que buscaremos aquel en el que menos veces
                  hayamos estado previo a buscar puntuaciones.
                  */
-                if ((counter <= minCounter)) {
-                    minCounter = counter;
-                    moveToDo = index;
-                }
+                if (!supLim()) {
+                    System.out.println("HOLO");
+                    if ((counter <= minCounter)) {
+                        minCounter = counter;
+                        moveToDo = index;
+                    }
 
-                if ((score > maxScore) && (counter < MAXCONT)) {
-                    maxScore = score;
-                    moveToDoAux = index;
-                    isPos = true;
-                }
-                if (counter > MAXCONT) {
-                    maxScore = 0;
-                    if (score >= maxScore) {
+                    if ((score > maxScore)) {
                         maxScore = score;
                         moveToDoAux = index;
                         isPos = true;
+                    }
+                } else {
+
+                    if (score >= maxScore) {
+                        maxScore = score;
+                        moveToDo = index;
                     }
                 }
 //                if ((score > maxScore) && (counter > MAXCONT)) {
@@ -246,37 +299,24 @@ public class MyAgent implements Agent {
 
 //        if (aMoveToDo.equals(aMoveToDoAux)) { //Si los posibles movimientos son iguales tiramos un random.
 //
-//            int i = 0;
-//            int primeraVez = 0;
-//            while (i < posMoves.length) {
-//                if (posMoves[i]) {
-//                    if (primeraVez == 0) {
-//                        moveToDo = i;
-//                        primeraVez = 1;
-//                    }
-//                    if (primeraVez == 1) {
-//                        Random rand = new Random();
-//                        if (rand.nextBoolean()) {
-//                            moveToDo = i;
-//                        }
-//                    }
-//
-//                }
-//                i++;
-//            }
+        //RANDOM FUNCTION
 //        }
-        if (aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
+        if (moveToDo < 0) {
+            moveToDo = moveToDoAux;
+        } else if (aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
             if (isPos) {
                 moveToDo = moveToDoAux;
             }
-
-            
-
-//            if (aprendiz.get(obtenerPosicion(1,1)).get(SCORE_KEY) > 100){
-//                moveToDo = moveToDoAux;
-//            }
-//        Si el movimiento que va a hacer es muy malo se va por el movimiento por puntos.
+//            if (supLim())
+//                moveToDo=moveToDoAux;
+        }else if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT ) {
+            moveToDo=randomMove();
         }
+        if(prendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 15)
+//        
+        else{
+//            moveToDo=randomMove();
+//        }
         System.out.println("Movimiento a realizar: " + moveToDo);
 
         // Le digo que moviento realizar
@@ -410,12 +450,10 @@ public class MyAgent implements Agent {
         w.doAction(World.A_MOVE);
         System.out.println("DEBUG--> " + "X: " + mejorX + " Y: " + mejorY);
 
-        if ((aprendiz.get(obtenerPosicion(mejorX, mejorY)).get(SCORE_KEY) > 50)) {
-            System.out.println(":D");
-            aprendiz.get(obtenerPosicion(x, y)).put(SCORE_KEY, valorNodo(x, y, mejorX, mejorY));
-        } else {
-            aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, mejorX, mejorY));
+        if (!supLim()) {
+            aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, x, y));
         }
+
         int cont = aprendiz.get(obtenerPosicion(mejorX, mejorY)).get(CONT_KEY);
         cont++;
         aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(CONT_KEY, cont);
