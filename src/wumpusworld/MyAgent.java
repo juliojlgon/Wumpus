@@ -153,7 +153,10 @@ public class MyAgent implements Agent {
             score += 50;
             aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
         }
-        if (aprendiz.get(obtenerPosicion(x, y)).get(SCORE_KEY) >= 50) {
+//        if (obtenerPosicion(x, y) == 0) {
+//                valor=1;
+//        }
+        if (aprendiz.get(obtenerPosicion(x, y)).get(SCORE_KEY) >= 30) {
             if (obtenerPosicion(x, y) == 0) {
                 aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, 1);
             } else {
@@ -312,9 +315,10 @@ public class MyAgent implements Agent {
         }else if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT ) {
             moveToDo=randomMove();
         }
-//        if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 25){
-//            moveToDo=randomMove();
-//        }
+        if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 25&&
+                aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY)==0){
+            moveToDo=randomMove();
+        }
 //        else{
 //            moveToDo=randomMove();
 //        }
@@ -453,12 +457,12 @@ public class MyAgent implements Agent {
 
         if (!supLim()) {
             aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, x, y));
-        }
+        
 
         int cont = aprendiz.get(obtenerPosicion(mejorX, mejorY)).get(CONT_KEY);
         cont++;
         aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(CONT_KEY, cont);
-
+        }
         return;
     }
 
