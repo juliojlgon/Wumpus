@@ -312,9 +312,10 @@ public class MyAgent implements Agent {
         }else if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT ) {
             moveToDo=randomMove();
         }
-        if(prendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 15)
-//        
-        else{
+        if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 25){
+            moveToDo=randomMove();
+        }
+//        else{
 //            moveToDo=randomMove();
 //        }
         System.out.println("Movimiento a realizar: " + moveToDo);
