@@ -89,7 +89,7 @@ public class MyAgent implements Agent {
     public boolean finishTeaching() {
         boolean terminal = false;
         int score1 = aprendiz.get(1).get(SCORE_KEY);
-        int score2 = aprendiz.get(5).get(SCORE_KEY);
+        int score2 = aprendiz.get(4).get(SCORE_KEY);
         if (score1 > 10 || score2 > 10) {
             terminal = true;
         }
@@ -133,12 +133,12 @@ public class MyAgent implements Agent {
             i++;
         }
         int[] aux = movement(move);
-        if(aprendiz.get(obtainPosition(aux[0], aux[1])).get(SCORE_KEY) < 0){
-            moves[move]=false;
+        if (aprendiz.get(obtainPosition(aux[0], aux[1])).get(SCORE_KEY) < 0) {
+            moves[move] = false;
             move = randomMove(moves);
         }
-            return move;
-        
+        return move;
+
     }
 
     /**
@@ -157,7 +157,7 @@ public class MyAgent implements Agent {
 //        if (w.hasStench(x, y) && (score < 1)) {
 //            valor = - 50;
 //        }
-        if (w.hasPit(x, y) ){
+        if (w.hasPit(x, y)) {
             valor += -500;
         }
         if (w.hasWumpus(x, y) && (score < 1)) {
@@ -165,6 +165,8 @@ public class MyAgent implements Agent {
         }
         if (w.hasGlitter(x, y)) {
             valor = 10000;
+            if(w.hasWumpus(x, y))
+                valor = 5000;
             score += 50;
             aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
         }
@@ -307,8 +309,6 @@ public class MyAgent implements Agent {
 
             }
             index++;
-
-            //Comparar puntuaciones para moverme. ESO FALLA! Y SIGUE FALLANDO AUNQUE MENOS
         }
 
         if (moveToDo < 0) {
@@ -317,29 +317,27 @@ public class MyAgent implements Agent {
             if (isPos) {
                 moveToDo = moveToDoAux;
             }
-//            if (supLim())
-//                moveToDo=moveToDoAux;
-        } else if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT) {
+        } else if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT && !finishTeaching()) {
             moveToDo = randomMove(posMoves);
         }
-        if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 15
+        if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 10
                 && aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) == 0) {
             moveToDo = randomMove(posMoves);
         }
 //        else{
 //            moveToDo=randomMove();
 //        }
-        
+
         boolean killWumpus = false;
         int wumpus = searchWumpus(cX, cY);
-        if (wumpus!=-1){
-            moveToDo=wumpus;
+        if (wumpus != -1) {
+            moveToDo = wumpus;
             killWumpus = true;
         }
-            
+
         System.out.println("Movimiento a realizar: " + moveToDo);
-        
-         // declaro mejor x
+
+        // declaro mejor x
         int mejorX = 0;
         // declaro mejor y
         int mejorY = 0;
@@ -347,9 +345,9 @@ public class MyAgent implements Agent {
 
         // Le digo que moviento realizar
         int[] aux = movement(moveToDo);
-        mejorX=aux[0];
-        mejorY=aux[1];
-        
+        mejorX = aux[0];
+        mejorY = aux[1];
+
         int direction = w.getDirection();
 
         // TODO orientar()
@@ -421,13 +419,15 @@ public class MyAgent implements Agent {
         }
         int x = w.getPlayerX();
         int y = w.getPlayerY();
-        if (killWumpus){
+        if (killWumpus) {
             w.doAction(World.A_SHOOT);
-            aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, 50);
+            if (aprendiz.get(obtainPosition(mejorX, mejorY)).get(SCORE_KEY) < 500) {
+                aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, 50);
+            }
         }
- 
+
         w.doAction(World.A_MOVE);
-        
+
         System.out.println("DEBUG--> " + "X: " + mejorX + " Y: " + mejorY);
 
         if (!finishTeaching()) {
@@ -446,12 +446,14 @@ public class MyAgent implements Agent {
     public void setAprendiz(ArrayList<HashMap<String, Integer>> aprendiz) {
         this.aprendiz = aprendiz;
     }
+
     /**
      * This function is for telling us where we have to move.
+     *
      * @param possibleMove [0-3] UP RIGHT DOWN LEFT respectively
      * @return the position where we have to move. X Y
      */
-    public int[] movement(int possibleMove){
+    public int[] movement(int possibleMove) {
         int[] move = new int[2];
         if (possibleMove == 0) {
             move[0] = w.getPlayerX();
@@ -471,29 +473,28 @@ public class MyAgent implements Agent {
         }
         return move;
     }
-    
-    
+
     /**
-     * 
+     *
      * @param x POSX
      * @param y POSY
      * @return the place where the wumpus is from our position.
      */
-    public int searchWumpus(int x, int y){
-        int kill=0;
-        if (w.hasArrow() && w.hasStench(x, y) && w.wumpusAlive() && finishTeaching()){
-            for(int i = 0; i < posMoves.length; i++){
-                if(posMoves[i]){
-                    if(aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY)< -500){
+    public int searchWumpus(int x, int y) {
+        int kill = -1;
+        if (w.hasArrow() && w.hasStench(x, y) && w.wumpusAlive() && finishTeaching()) {
+            for (int i = 0; i < posMoves.length; i++) {
+                if (posMoves[i]) {
+                    if(aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY)< -500
+                            || aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY) == 5000){
+//                    if (w.hasWumpus(x + incrX[i], y + incrY[i])) {
                         //HABEMUS WUMPUS
                         kill = i;
                     }
-                    
+
                 }
             }
-        }else{
-            kill = -1;
-        }
+        } 
         return kill;
     }
 
