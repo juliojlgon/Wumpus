@@ -58,13 +58,13 @@ public class MyAgent implements Agent {
     }
 
     /**
-     * Nos va a devolver una posicion entendible para el array
+     * It will return a readable position for our array.
      *
-     * @param x posicion X del jugador
-     * @param y Posicion Y del jugador
-     * @return Posicion del ArrayList<HashMap>
+     * @param x Position X of the player
+     * @param y Position Y of the player
+     * @return Valid position readable for an ArrayList
      */
-    public int obtenerPosicion(int x, int y) {
+    public int obtainPosition(int x, int y) {
 
         boolean encontrado = false;
         int i = 0;
@@ -74,16 +74,20 @@ public class MyAgent implements Agent {
                     && (aprendiz.get(i).get(POS_Y_KEY) == y)) {
                 encontrado = true;
                 posicion = i;
-                //System.out.println(" POSX " + x + " POSY " + y + " LISTA " + posicion + " =DEBUG");
             }
             i++;
         }
         return posicion;
     }
 
-    public boolean supLim() {
+    /**
+     * This function will find in the adyacent positions of [1:1] in order to
+     * see is there is any path availiable for going to the goal.
+     *
+     * @return True if we have a valid path, False otherwise.
+     */
+    public boolean finishTeaching() {
         boolean terminal = false;
-        //Si desde el punto 0 encontramos algun valor superior a lo normal hemos terminado
         int score1 = aprendiz.get(1).get(SCORE_KEY);
         int score2 = aprendiz.get(5).get(SCORE_KEY);
         if (score1 > 10 || score2 > 10) {
@@ -103,12 +107,17 @@ public class MyAgent implements Agent {
 
     }
 
-    public int randomMove() {
+    /**
+     * This will give us a random move.
+     *
+     * @return
+     */
+    public int randomMove(boolean[] moves) {
         int i = 0;
         int move = -1;
         int primeraVez = 0;
-        while (i < posMoves.length) {
-            if (posMoves[i]) {
+        while (i < moves.length) {
+            if (moves[i]) {
                 if (primeraVez == 0) {
                     move = i;
                     primeraVez = 1;
@@ -123,7 +132,13 @@ public class MyAgent implements Agent {
             }
             i++;
         }
-        return move;
+        int[] aux = movement(move);
+        if(aprendiz.get(obtainPosition(aux[0], aux[1])).get(SCORE_KEY) < 0){
+            moves[move]=false;
+            move = randomMove(moves);
+        }
+            return move;
+        
     }
 
     /**
@@ -135,14 +150,14 @@ public class MyAgent implements Agent {
      */
     public int valorNodo(int x, int y, int bestX, int bestY) {
         int valor = 0;
-        int score = aprendiz.get(obtenerPosicion(bestX, bestY)).get(SCORE_KEY);
+        int score = aprendiz.get(obtainPosition(bestX, bestY)).get(SCORE_KEY);
 //        if (w.hasBreeze(x, y) && (score < 1)) {
 //            valor = - 50;
 //        }
 //        if (w.hasStench(x, y) && (score < 1)) {
 //            valor = - 50;
 //        }
-        if (w.hasPit(x, y) && (score < 1)) {
+        if (w.hasPit(x, y) ){
             valor += -500;
         }
         if (w.hasWumpus(x, y) && (score < 1)) {
@@ -151,18 +166,16 @@ public class MyAgent implements Agent {
         if (w.hasGlitter(x, y)) {
             valor = 10000;
             score += 50;
-            aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
+            aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
         }
-//        if (obtenerPosicion(x, y) == 0) {
-//                valor=1;
-//        }
-        if (aprendiz.get(obtenerPosicion(x, y)).get(SCORE_KEY) >= 30) {
-            if (obtenerPosicion(x, y) == 0) {
-                aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, 1);
+
+        if (aprendiz.get(obtainPosition(x, y)).get(SCORE_KEY) >= 30) {
+            if (obtainPosition(x, y) == 0) {
+                aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, 1);
             } else {
                 valor = score + 60;
                 score += 40;
-                aprendiz.get(obtenerPosicion(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
+                aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
             }
         }
 
@@ -258,15 +271,15 @@ public class MyAgent implements Agent {
             //si queremos mover arriba nos valdría con usar el indice 0, evitando
             //multiples casos de if.
             if (posMoves[index]) {
-                counter = aprendiz.get(obtenerPosicion(cX + incrX[index], cY + incrY[index])).get(CONT_KEY);
-                score = aprendiz.get(obtenerPosicion(cX + incrX[index], cY + incrY[index])).get(SCORE_KEY);
+                counter = aprendiz.get(obtainPosition(cX + incrX[index], cY + incrY[index])).get(CONT_KEY);
+                score = aprendiz.get(obtainPosition(cX + incrX[index], cY + incrY[index])).get(SCORE_KEY);
                 /*
                  Si el contador es contador es menor que tres comprobamos  
                  directamente las puntuaciones, si por el contrario el contador no lo es
                  primero comprobamos el contador, ya que buscaremos aquel en el que menos veces
                  hayamos estado previo a buscar puntuaciones.
                  */
-                if (!supLim()) {
+                if (!finishTeaching()) {
                     System.out.println("HOLO");
                     if ((counter <= minCounter)) {
                         minCounter = counter;
@@ -297,89 +310,46 @@ public class MyAgent implements Agent {
 
             //Comparar puntuaciones para moverme. ESO FALLA! Y SIGUE FALLANDO AUNQUE MENOS
         }
-        //CUANDO QUIERO QUE SEA RANDOM?? cuando todos los posibles movimientos sean iguales.
-        //añadir a un arraylist y sin son todos iguales entrar por aquí.
 
-//        if (aMoveToDo.equals(aMoveToDoAux)) { //Si los posibles movimientos son iguales tiramos un random.
-//
-        //RANDOM FUNCTION
-//        }
         if (moveToDo < 0) {
             moveToDo = moveToDoAux;
-        } else if (aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
+        } else if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) < -50) {
             if (isPos) {
                 moveToDo = moveToDoAux;
             }
 //            if (supLim())
 //                moveToDo=moveToDoAux;
-        }else if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT ) {
-            moveToDo=randomMove();
+        } else if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT) {
+            moveToDo = randomMove(posMoves);
         }
-        if(aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 25&&
-                aprendiz.get(obtenerPosicion(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY)==0){
-            moveToDo=randomMove();
+        if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 15
+                && aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) == 0) {
+            moveToDo = randomMove(posMoves);
         }
 //        else{
 //            moveToDo=randomMove();
 //        }
+        
+        boolean killWumpus = false;
+        int wumpus = searchWumpus(cX, cY);
+        if (wumpus!=-1){
+            moveToDo=wumpus;
+            killWumpus = true;
+        }
+            
         System.out.println("Movimiento a realizar: " + moveToDo);
-
-        // Le digo que moviento realizar
-        if (moveToDo == 0) {
-            moveDown = false;
-            moveUp = true;
-            moveLeft = false;
-            moveRight = false;
-        }
-        if (moveToDo == 1) {
-            moveDown = false;
-            moveUp = false;
-            moveLeft = false;
-            moveRight = true;
-        }
-        if (moveToDo == 2) {
-            moveDown = true;
-            moveUp = false;
-            moveLeft = false;
-            moveRight = false;
-        }
-        if (moveToDo == 3) {
-            moveDown = false;
-            moveUp = false;
-            moveLeft = true;
-            moveRight = false;
-        }
-
-        // declaro puntuacion actual
-        int puntuacionActual = 0;
-        // dweclaro puntuacion mejor
-        int mejorPuntuacion = 0;
-
-        // declaro mejor x
+        
+         // declaro mejor x
         int mejorX = 0;
         // declaro mejor y
         int mejorY = 0;
         // comprobamos a la derecha
 
-        if (moveRight) {
-
-            mejorX = w.getPlayerX() + 1;
-            mejorY = w.getPlayerY();
-        }
-        if (moveUp) {
-            mejorX = w.getPlayerX();
-            mejorY = w.getPlayerY() + 1;
-
-        }
-        if (moveLeft) {
-            mejorX = w.getPlayerX() - 1;
-            mejorY = w.getPlayerY();
-        }
-        if (moveDown) {
-            mejorX = w.getPlayerX();
-            mejorY = w.getPlayerY() - 1;
-
-        }
+        // Le digo que moviento realizar
+        int[] aux = movement(moveToDo);
+        mejorX=aux[0];
+        mejorY=aux[1];
+        
         int direction = w.getDirection();
 
         // TODO orientar()
@@ -449,19 +419,22 @@ public class MyAgent implements Agent {
         for (int i = 0; i < aprendiz.size(); i++) {
             System.out.println(aprendiz.get(i));
         }
-        //System.out.println(w.getPlayerX());
         int x = w.getPlayerX();
         int y = w.getPlayerY();
+        if (killWumpus){
+            w.doAction(World.A_SHOOT);
+            aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, 50);
+        }
+ 
         w.doAction(World.A_MOVE);
+        
         System.out.println("DEBUG--> " + "X: " + mejorX + " Y: " + mejorY);
 
-        if (!supLim()) {
-            aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, x, y));
-        
-
-        int cont = aprendiz.get(obtenerPosicion(mejorX, mejorY)).get(CONT_KEY);
-        cont++;
-        aprendiz.get(obtenerPosicion(mejorX, mejorY)).put(CONT_KEY, cont);
+        if (!finishTeaching()) {
+            aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, x, y));
+            int cont = aprendiz.get(obtainPosition(mejorX, mejorY)).get(CONT_KEY);
+            cont++;
+            aprendiz.get(obtainPosition(mejorX, mejorY)).put(CONT_KEY, cont);
         }
         return;
     }
@@ -472,6 +445,56 @@ public class MyAgent implements Agent {
 
     public void setAprendiz(ArrayList<HashMap<String, Integer>> aprendiz) {
         this.aprendiz = aprendiz;
+    }
+    /**
+     * This function is for telling us where we have to move.
+     * @param possibleMove [0-3] UP RIGHT DOWN LEFT respectively
+     * @return the position where we have to move. X Y
+     */
+    public int[] movement(int possibleMove){
+        int[] move = new int[2];
+        if (possibleMove == 0) {
+            move[0] = w.getPlayerX();
+            move[1] = w.getPlayerY() + 1;
+        }
+        if (possibleMove == 1) {
+            move[0] = w.getPlayerX() + 1;
+            move[1] = w.getPlayerY();
+        }
+        if (possibleMove == 2) {
+            move[0] = w.getPlayerX();
+            move[1] = w.getPlayerY() - 1;
+        }
+        if (possibleMove == 3) {
+            move[0] = w.getPlayerX() - 1;
+            move[1] = w.getPlayerY();
+        }
+        return move;
+    }
+    
+    
+    /**
+     * 
+     * @param x POSX
+     * @param y POSY
+     * @return the place where the wumpus is from our position.
+     */
+    public int searchWumpus(int x, int y){
+        int kill=0;
+        if (w.hasArrow() && w.hasStench(x, y) && w.wumpusAlive() && finishTeaching()){
+            for(int i = 0; i < posMoves.length; i++){
+                if(posMoves[i]){
+                    if(aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY)< -500){
+                        //HABEMUS WUMPUS
+                        kill = i;
+                    }
+                    
+                }
+            }
+        }else{
+            kill = -1;
+        }
+        return kill;
     }
 
 }
