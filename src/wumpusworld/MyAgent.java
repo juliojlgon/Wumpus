@@ -165,8 +165,9 @@ public class MyAgent implements Agent {
         }
         if (w.hasGlitter(x, y)) {
             valor = 10000;
-            if(w.hasWumpus(x, y))
+            if (w.hasWumpus(x, y)) {
                 valor = 5000;
+            }
             score += 50;
             aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
         }
@@ -176,7 +177,11 @@ public class MyAgent implements Agent {
                 aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, 1);
             } else {
                 valor = score + 60;
-                score += 40;
+                if (score < 0) {
+                    score = 31;
+                } else {
+                    score += 40;
+                }
                 aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, score);//EL PUNTO ANTERIOR
             }
         }
@@ -320,38 +325,40 @@ public class MyAgent implements Agent {
         } else if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT && !finishTeaching()) {
             moveToDo = randomMove(posMoves);
         }
-        if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > 10
+        if (aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(CONT_KEY) > MAXCONT
                 && aprendiz.get(obtainPosition(cX + incrX[moveToDo], cY + incrY[moveToDo])).get(SCORE_KEY) == 0) {
             moveToDo = randomMove(posMoves);
         }
-//        else{
-//            moveToDo=randomMove();
-//        }
 
         boolean killWumpus = false;
         int wumpus = searchWumpus(cX, cY);
+        int[] aux1 = movement(moveToDo);
         if (wumpus != -1) {
-            moveToDo = wumpus;
-            killWumpus = true;
+            int[] aux = movement(wumpus);
+            if (aprendiz.get(obtainPosition(aux1[0], aux1[1])).get(SCORE_KEY) <= 52
+                    || aprendiz.get(obtainPosition(aux[0], aux[1])).get(SCORE_KEY) == 5000) {
+                moveToDo = wumpus;
+                killWumpus = true;
+            }
         }
 
         System.out.println("Movimiento a realizar: " + moveToDo);
 
-        // declaro mejor x
-        int mejorX = 0;
+        // Best X
+        int bestX = 0;
         // declaro mejor y
-        int mejorY = 0;
+        int bestY = 0;
         // comprobamos a la derecha
-
+        int[] aux;
         // Le digo que moviento realizar
-        int[] aux = movement(moveToDo);
-        mejorX = aux[0];
-        mejorY = aux[1];
+        aux = movement(moveToDo);
+        bestX = aux[0];
+        bestY = aux[1];
 
         int direction = w.getDirection();
 
-        // TODO orientar()
-        if (mejorX < cX) {
+        // TODO orientar() --> Hacer la función
+        if (bestX < cX) {
             switch (direction) {
                 case 0: //UP
                     w.doAction(World.A_TURN_LEFT);
@@ -366,7 +373,7 @@ public class MyAgent implements Agent {
             }
 
         }
-        if (mejorX > cX) {
+        if (bestX > cX) {
             switch (direction) {
                 case 0:
                     w.doAction(World.A_TURN_RIGHT);
@@ -381,7 +388,7 @@ public class MyAgent implements Agent {
             }
 
         }
-        if (mejorY < cY) {
+        if (bestY < cY) {
             switch (direction) {
                 case 0:
                     w.doAction(World.A_TURN_RIGHT);
@@ -397,7 +404,7 @@ public class MyAgent implements Agent {
             }
 
         }
-        if (mejorY > cY) {
+        if (bestY > cY) {
             switch (direction) {
                 case 1:
                     w.doAction(World.A_TURN_LEFT);
@@ -414,27 +421,27 @@ public class MyAgent implements Agent {
 
         }
 
-        for (int i = 0; i < aprendiz.size(); i++) {
-            System.out.println(aprendiz.get(i));
-        }
+//        for (int i = 0; i < aprendiz.size(); i++) {
+//            System.out.println(aprendiz.get(i));
+//        }
         int x = w.getPlayerX();
         int y = w.getPlayerY();
         if (killWumpus) {
             w.doAction(World.A_SHOOT);
-            if (aprendiz.get(obtainPosition(mejorX, mejorY)).get(SCORE_KEY) < 500) {
-                aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, 50);
+            if (aprendiz.get(obtainPosition(bestX, bestY)).get(SCORE_KEY) < 500) {
+                aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, 52);
             }
         }
 
         w.doAction(World.A_MOVE);
 
-        System.out.println("DEBUG--> " + "X: " + mejorX + " Y: " + mejorY);
+        //System.out.println("DEBUG--> " + "X: " + bestX + " Y: " + bestY);
 
         if (!finishTeaching()) {
-            aprendiz.get(obtainPosition(mejorX, mejorY)).put(SCORE_KEY, valorNodo(mejorX, mejorY, x, y));
-            int cont = aprendiz.get(obtainPosition(mejorX, mejorY)).get(CONT_KEY);
+            aprendiz.get(obtainPosition(bestX, bestY)).put(SCORE_KEY, valorNodo(bestX, bestY, x, y));
+            int cont = aprendiz.get(obtainPosition(bestX, bestY)).get(CONT_KEY);
             cont++;
-            aprendiz.get(obtainPosition(mejorX, mejorY)).put(CONT_KEY, cont);
+            aprendiz.get(obtainPosition(bestX, bestY)).put(CONT_KEY, cont);
         }
         return;
     }
@@ -478,23 +485,24 @@ public class MyAgent implements Agent {
      *
      * @param x POSX
      * @param y POSY
-     * @return the place where the wumpus is from our position.
+     * @return the place where the wumpus is from our position, A move 0-3 UP RIGHT DOWN LEFT
      */
     public int searchWumpus(int x, int y) {
         int kill = -1;
         if (w.hasArrow() && w.hasStench(x, y) && w.wumpusAlive() && finishTeaching()) {
             for (int i = 0; i < posMoves.length; i++) {
                 if (posMoves[i]) {
-                    if(aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY)< -500
-                            || aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY) == 5000){
+                    int score = aprendiz.get(obtainPosition(x + incrX[i], y + incrY[i])).get(SCORE_KEY);
+                    if (score < -500
+                            || score == 5000
+                            || score == 52) {
 //                    if (w.hasWumpus(x + incrX[i], y + incrY[i])) {
                         //HABEMUS WUMPUS
                         kill = i;
                     }
-
                 }
             }
-        } 
+        }
         return kill;
     }
 
