@@ -17,6 +17,8 @@ import java.util.logging.Logger;
  */
 public class GUI implements ActionListener {
 
+    private int randomW;
+
     private JFrame frame;
     private JPanel gamepanel;
     private JLabel score;
@@ -248,7 +250,8 @@ public class GUI implements ActionListener {
         if (e.getActionCommand().equals("NEW")) {
             String s = (String) mapList.getSelectedItem();
             if (s.equalsIgnoreCase("Random")) {
-                w = MapGenerator.getRandomMap((int) System.currentTimeMillis()).generateWorld();
+                randomW = (int) System.currentTimeMillis();
+                w = MapGenerator.getRandomMap(randomW).generateWorld();
             } else {
                 int i = Integer.parseInt(s);
                 i--;
@@ -263,10 +266,14 @@ public class GUI implements ActionListener {
                 agent = new MyAgent(w);
             }
             if (w.gameOver()) {
-                int i = Integer.parseInt(s);
-                i--;
                 ArrayList<HashMap<String, Integer>> aprendiz = (ArrayList<HashMap<String, Integer>>) agent.getAprendiz().clone();
-                w = maps.get(i).generateWorld();
+                if (!s.equalsIgnoreCase("Random")) {
+                    int i = Integer.parseInt(s);
+                    i--;
+                    w = maps.get(i).generateWorld();
+                } else {
+                    w = MapGenerator.getRandomMap(randomW).generateWorld();
+                }
                 agent = new MyAgent(w, aprendiz);
                 updateGame();
             }
@@ -274,9 +281,7 @@ public class GUI implements ActionListener {
             agent.doAction();
             updateGame();
 
-                
 //            }
-            
         }
     }
 
